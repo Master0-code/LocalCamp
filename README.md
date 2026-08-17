@@ -122,13 +122,13 @@ Look for the **IPv4 Address**.
 For example:
 
 ```text
-IPv4 Address . . . . . . : 192.168.1.10
+IPv4 Address . . . . . . : 1xx.xxx.x.xx
 ```
 
 Then open this address on another device:
 
 ```text
-http://192.168.1.10
+http://1xx.xxx.x.xx
 ```
 
 You can then access Local Camp from devices connected to the same LAN.
