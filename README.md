@@ -1,3 +1,14 @@
+## 📸 Screenshots
+
+### 🏠 Home
+![Local Camp Home](Screenshots/home.png)
+
+### 🔐 Login
+![Local Camp Login](Screenshots/login.png)
+
+### ❌ Error Page
+![Local Camp Error Page](Screenshots/error404.png)
+
 # ⚙️ Setup
 
 Follow these steps to run **Local Camp** on your computer.
