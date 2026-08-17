@@ -140,8 +140,9 @@ Local Camp is designed primarily for **private/local network use**.
 * Keep your `.env` file private.
 * Never publish your `SECRET_KEY`.
 * Never publish your `APP_PASSWORD`.
-* Do not put your personal Pictures, Music, Videos, or Documents inside the GitHub repository.
 * Do not expose Local Camp directly to the public internet unless you understand and properly configure the required security measures.
+* This is not made for INTERNET USE.
+* This is only for Local Area Network
 
 ## 🛑 Stopping Local Camp
 
