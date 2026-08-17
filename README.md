@@ -57,8 +57,8 @@ Change both values before running Local Camp.
 For example:
 
 ```env
-SECRET_KEY=your-long-random-secret-key
-APP_PASSWORD=your-local-camp-password
+SECRET_KEY=your-long-random-secret-key (anything you want)
+APP_PASSWORD=your-local-camp-password (anything you want)
 ```
 
 **Do not upload `.env` to GitHub.**
