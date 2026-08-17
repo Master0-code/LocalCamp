@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}{{ filename }}{% endblock %}
+
+{% block content %}
+
+<iframe src="{{ url_for('media', category=category, relative_path=relative_path) }}"></iframe>
+
+{% endblock %}

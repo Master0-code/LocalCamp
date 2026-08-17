@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}{{ filename }}{% endblock %}
+
+{% block content %}
+
+<div class="viewer-top">
+    <a href="javascript:history.back()">← Back</a>
+</div>
+
+<div class="viewer">
+    <h1>🎵</h1>
+    <h3>{{ filename }}</h3>
+
+    <audio controls autoplay>
+        <source src="{{ url_for('media', category=category, relative_path=relative_path) }}">
+        Your browser does not support audio playback.
+    </audio>
+
+    <div>
+        <a class="download-link" href="{{ url_for('download', category=category, relative_path=relative_path) }}">⬇ Download</a>
+    </div>
+</div>
+
+{% endblock %}

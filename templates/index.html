@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Local Library{% endblock %}
+
+{% block content %}
+
+<div class="header">
+    <div class="header-row">
+        <div>
+            <h1>📚 Local Library</h1>
+            <p>Your personal local media library</p>
+        </div>
+        <a class="logout-link" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="library">
+        {% for cat, icon in categories.items() %}
+        <a class="card" href="{{ url_for('browse', category=cat) }}">
+            <div class="icon">{{ icon }}</div>
+            <div class="title">{{ cat }}</div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

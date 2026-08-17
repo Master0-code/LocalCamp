@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category }} - Local Library{% endblock %}
+
+{% block content %}
+
+<div class="header">
+    <a href="{{ back_url }}">← Back</a>
+    <h1>{{ category_icon }} {{ category }}</h1>
+    {% if current_folder %}
+    <p>📁 {{ current_folder }}</p>
+    {% endif %}
+</div>
+
+<div class="container">
+    <div class="grid">
+        {% for item in items %}
+            {% set item_path = current_folder + '/' + item.name if current_folder else item.name %}
+
+            {% if item.type == "folder" %}
+            <a class="item folder" href="{{ url_for('browse', category=category, relative_path=item_path) }}">
+                <div class="icon">📁</div>
+                <div class="name">{{ item.name }}</div>
+            </a>
+            {% else %}
+            <a class="item file" href="{{ url_for('open_file', category=category, relative_path=item_path) }}">
+                <div class="icon">{{ category_icon }}</div>
+                <div class="name">{{ item.name }}</div>
+            </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    {% if not items %}
+    <p class="empty">This folder is empty.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

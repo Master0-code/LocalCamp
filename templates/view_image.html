@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}{{ filename }}{% endblock %}
+
+{% block content %}
+
+<div class="viewer-top">
+    <a href="javascript:history.back()">← Back</a>
+</div>
+
+<div class="viewer">
+    <img src="{{ url_for('media', category=category, relative_path=relative_path) }}" alt="{{ filename }}">
+    <h3>{{ filename }}</h3>
+    <a class="download-link" href="{{ url_for('download', category=category, relative_path=relative_path) }}">⬇ Download</a>
+</div>
+
+{% endblock %}

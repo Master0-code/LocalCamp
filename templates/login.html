@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Local Library{% endblock %}
+
+{% block content %}
+
+<div class="error-page">
+    <div class="error-icon">🔒</div>
+    <h1 class="error-title">Local Library</h1>
+    <p class="error-message">Enter the password to continue.</p>
+
+    {% if error %}
+    <p class="login-error">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST" class="login-form">
+        <input type="password" name="password" placeholder="Password" autofocus required>
+        <button type="submit">Enter</button>
+    </form>
+</div>
+
+{% endblock %}
