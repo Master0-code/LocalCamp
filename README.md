@@ -44,81 +44,17 @@ Install the required Python packages:
 pip install -r requirements.txt
 ```
 
-## 4. Create the `.env` File
-
-Create a file named:
-
-```text
-.env
-```
-
-in the same folder as `app.py`.
-
-Add:
-
-```env
-SECRET_KEY=replace-with-a-long-random-string
-APP_PASSWORD=anypasswordyouwant
-```
-
-### Important
-
-Change both values before running Local Camp.
-
-For example:
-
-```env
-SECRET_KEY=your-long-random-secret-key (anything you want)
-APP_PASSWORD=your-local-camp-password (anything you want)
-```
-
-**Do not upload `.env` to GitHub.**
-
-Make sure `.env` is included in your `.gitignore`:
-
-```gitignore
-.env
-```
-
-## 5. Set Your Library Folder
-
-Open `app.py` and find the library folder setting.
-
-Change it to the folder containing your Local Camp library:
-
-```python
-LIBRARY_FOLDER = r"C:\Path\To\Your\LocalLibrary"
-```
-
-Your library should contain the supported folders:
-
-```text
-LocalLibrary/
-├── Pictures/
-├── Music/
-├── Videos/
-└── Documents/
-```
-
-You can put your own files and subfolders inside these directories.
-
-## 6. Start Local Camp
+## 4. Start Local Camp
 
 Run:
 
 ```bash
-python app.py
+LocalCamp.exe
 ```
 
 If everything is configured correctly, Local Camp will start on your computer.
 
-Open a browser and go to:
-
-```text
-http://localhost
-```
-
-## 7. Access Local Camp From Another Device
+## 5. Access Local Camp From Another Device
 
 Make sure the other device is connected to the **same local network** as the computer running Local Camp.
 
@@ -154,13 +90,3 @@ Local Camp is designed primarily for **private/local network use**.
 * Do not expose Local Camp directly to the public internet unless you understand and properly configure the required security measures.
 * This is not made for INTERNET USE.
 * This is only for Local Area Network
-
-## 🛑 Stopping Local Camp
-
-Press:
-
-```text
-Ctrl + C
-```
-
-in the terminal running Local Camp.
