@@ -144,6 +144,59 @@ a {
 }
 
 /* -------------------------------------------------------
+   UPLOAD FORM — browse page
+------------------------------------------------------- */
+
+.upload-form {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--border-file);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+}
+
+.upload-form input[type="file"] {
+    flex: 1;
+    min-width: 180px;
+    color: var(--text-dim);
+    font-size: 14px;
+}
+
+.upload-form input[type="file"]::file-selector-button {
+    padding: 8px 16px;
+    margin-right: 12px;
+    border-radius: 8px;
+    border: none;
+    background: var(--card-hover);
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.upload-form input[type="file"]::file-selector-button:hover {
+    opacity: 0.85;
+}
+
+.upload-form button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background: var(--card-hover);
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.upload-form button:hover {
+    opacity: 0.85;
+}
+
+/* -------------------------------------------------------
    SHARED — icons used on home + browse
 ------------------------------------------------------- */
 
