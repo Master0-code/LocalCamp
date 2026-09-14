@@ -13,6 +13,17 @@
 </div>
 
 <div class="container">
+    {% if current_folder %}
+    <form action="{{ url_for('upload', category=category, relative_path=current_folder) }}"
+          method="post" enctype="multipart/form-data" class="upload-form">
+    {% else %}
+    <form action="{{ url_for('upload', category=category) }}"
+          method="post" enctype="multipart/form-data" class="upload-form">
+    {% endif %}
+        <input type="file" name="file" required>
+        <button type="submit">Upload here</button>
+    </form>
+
     <div class="grid">
         {% for item in items %}
             {% set item_path = current_folder + '/' + item.name if current_folder else item.name %}
