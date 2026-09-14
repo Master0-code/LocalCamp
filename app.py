@@ -1,15 +1,104 @@
 from flask import Flask, send_file, render_template, abort, request, session, redirect, url_for
 from flask_socketio import SocketIO
+from werkzeug.utils import secure_filename
 from datetime import timedelta
 import os
+import sys
 import secrets
 import time
+import webbrowser
+import threading
+import socket
+
+# =========================================================
+# FIRST-TIME SETUP WIZARD
+# =========================================================
+# Runs BEFORE anything else. If a .env already exists next to the exe
+# (or next to app.py when running as a script), this does nothing and
+# returns immediately. If it doesn't exist, it pops a small window
+# asking for the share folder + password, then writes .env.
+
+def get_app_dir():
+    # When frozen by PyInstaller, sys.executable is the exe's own path.
+    # When running as a normal script, use app.py's own folder.
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(os.path.abspath(sys.executable))
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def run_first_time_setup():
+    env_path = os.path.join(get_app_dir(), ".env")  # must match load_dotenv's path exactly
+
+    if os.path.exists(env_path):
+        return  # already configured, nothing to do
+
+    import tkinter as tk
+    from tkinter import filedialog, messagebox
+
+    root = tk.Tk()
+    root.title("Local Library — First Time Setup")
+    root.geometry("440x240")
+    root.resizable(False, False)
+
+    tk.Label(root, text="Folder to share:").pack(pady=(20, 0))
+
+    folder_var = tk.StringVar()
+    folder_row = tk.Frame(root)
+    folder_row.pack(pady=5)
+    tk.Entry(folder_row, textvariable=folder_var, width=42).pack(side="left")
+    tk.Button(
+        folder_row,
+        text="Browse",
+        command=lambda: folder_var.set(filedialog.askdirectory() or folder_var.get())
+    ).pack(side="left", padx=5)
+
+    tk.Label(root, text="Set a password:").pack(pady=(20, 0))
+    password_var = tk.StringVar()
+    tk.Entry(root, textvariable=password_var, show="*", width=30).pack(pady=5)
+
+    def save_and_close():
+        folder = folder_var.get().strip()
+        password = password_var.get().strip()
+
+        if not folder or not password:
+            messagebox.showerror("Missing info", "Please choose a folder and set a password.")
+            return
+
+        if not os.path.isdir(folder):
+            messagebox.showerror("Invalid folder", "That folder doesn't exist.")
+            return
+
+        # Create the expected category subfolders inside the chosen share
+        # folder if they aren't already there — matches the CATEGORIES
+        # dict below (Pictures/Music/Videos/Documents). Hardcoded here
+        # since CATEGORIES itself isn't built until after .env is loaded.
+        for subfolder in ("Pictures", "Music", "Videos", "Documents"):
+            os.makedirs(os.path.join(folder, subfolder), exist_ok=True)
+
+        with open(env_path, "w") as f:
+            f.write(f"LIBRARY_FOLDER={folder}\n")
+            f.write(f"APP_PASSWORD={password}\n")
+            f.write(f"SECRET_KEY={secrets.token_hex(32)}\n")
+
+        root.destroy()
+
+    tk.Button(root, text="Save & Start", command=save_and_close, width=15).pack(pady=25)
+
+    root.mainloop()
+
+    # If the window was closed without saving, .env still won't exist —
+    # bail out instead of starting the server unconfigured.
+    if not os.path.exists(env_path):
+        sys.exit("Setup was cancelled. The app needs a folder and password to run.")
+
+
+run_first_time_setup()
 
 try:
     from dotenv import load_dotenv
     # Look for .env next to this file, not in whatever folder you happened
     # to launch python from — otherwise it silently fails to load.
-    _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env") #this was the fix, cause i had multiple folders lined up, env file was is another
+    _env_path = os.path.join(get_app_dir(), ".env")  # same path the wizard writes to
     load_dotenv(_env_path)
 except ImportError:
     pass  # dotenv is optional — env vars can still be set the normal OS way
@@ -31,6 +120,10 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(days=7)
 )
 
+# Caps any single upload at 500MB — without this, someone could upload a
+# huge file and eat all your disk space or hang the server. Adjust as needed.
+app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024
+
 # APP_PASSWORD: the single shared password gating access to the whole app.
 APP_PASSWORD = os.environ.get("APP_PASSWORD")
 
@@ -48,7 +141,10 @@ SocketIO = SocketIO(app)
 # LOCAL LIBRARY
 # =========================================================
 
-LIBRARY_FOLDER = r"C:\your\file\that_you_want_to_put_ETC_to_share"  # change this to the path of the folder you want shared.
+# Now comes from the .env file written by the setup wizard above.
+# The r"E:\share" fallback only matters if someone deletes .env's
+# LIBRARY_FOLDER line by hand but leaves the file in place.
+LIBRARY_FOLDER = os.environ.get("LIBRARY_FOLDER", r"E:\share")
 
 CATEGORIES = {
     "Pictures": {
@@ -85,6 +181,12 @@ CATEGORIES = {
         "icon": "📄"
     }
 }
+
+# Self-heal: create any missing category folders on every startup, not just
+# during the wizard. Covers old .env files from before this existed, or
+# someone deleting a subfolder by hand later.
+for _category_data in CATEGORIES.values():
+    os.makedirs(_category_data["folder"], exist_ok=True)
 
 
 # =========================================================
@@ -246,6 +348,17 @@ def server_error(e):
         error_title="Something broke",
         error_message="The server hit an unexpected error. Try again in a moment."
     ), 500
+
+
+@app.errorhandler(413)
+def too_large(e):
+    return render_template(
+        "error.html",
+        error_code=413,
+        error_icon="📦",
+        error_title="File too large",
+        error_message="That file is bigger than the upload limit."
+    ), 413
 
 
 # =========================================================
@@ -431,10 +544,87 @@ def download(category, relative_path):
 
 
 # =========================================================
+# UPLOAD
+# =========================================================
+
+@app.route("/upload/<category>", methods=["POST"])
+@app.route("/upload/<category>/<path:relative_path>", methods=["POST"])
+def upload(category, relative_path=""):
+
+    if category not in CATEGORIES:
+        abort(404)
+
+    # safe_path already blocks path traversal — same check used everywhere else
+    target_dir = safe_path(category, relative_path)
+
+    if not os.path.isdir(target_dir):
+        abort(404)
+
+    uploaded = request.files.get("file")
+
+    if uploaded is None or uploaded.filename == "":
+        abort(400)
+
+    # secure_filename strips slashes, "..", and anything else that could
+    # be used to write outside target_dir or overwrite a system file.
+    filename = secure_filename(uploaded.filename)
+
+    if not filename or not is_allowed_file(category, filename):
+        abort(403)
+
+    destination = os.path.join(target_dir, filename)
+
+    # Don't silently overwrite an existing file — append (1), (2), etc.
+    if os.path.exists(destination):
+        base, extension = os.path.splitext(filename)
+        counter = 1
+
+        while os.path.exists(destination):
+            destination = os.path.join(target_dir, f"{base} ({counter}){extension}")
+            counter += 1
+
+    uploaded.save(destination)
+
+    if relative_path:
+        return redirect(url_for("browse", category=category, relative_path=relative_path))
+    return redirect(url_for("browse", category=category))
+
+
+# =========================================================
 # START SERVER
 # =========================================================
 
+# =========================================================
+# START SERVER
+# =========================================================
+
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        return local_ip
+    except Exception:
+        return "127.0.0.1"
+
+
+def open_browser():
+    time.sleep(1.5)
+
+    local_ip = get_local_ip()
+    url = f"http://{local_ip}/"
+
+    print(f"Local Library running at: {url}")
+
+    webbrowser.open(url)
+
+
 if __name__ == "__main__":
+    threading.Thread(
+        target=open_browser,
+        daemon=True
+    ).start()
 
     SocketIO.run(
         app,
@@ -442,6 +632,7 @@ if __name__ == "__main__":
         port=80,
         debug=False
     )
+    
 
 # using flask with socketio, threaded=True, more to come as the core gets finished.
 # something like gevent/eventlet is needed to handle multiple devices requesting/playing at once —
